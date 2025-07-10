@@ -24,6 +24,10 @@ class SudokuGenerator:
             6: {'easy': 0.35, 'normal': 0.45, 'hard': 0.55},
             9: {'easy': 0.4, 'normal': 0.5, 'hard': 0.6}
         }
+        
+        # Generation settings
+        self.max_attempts_multiplier = 10
+        self.require_unique_solution = True
     
     def is_valid(self, grid: List[List[int]], row: int, col: int, num: int) -> bool:
         """Check if placing num at (row, col) is valid."""
@@ -120,7 +124,7 @@ class SudokuGenerator:
         
         attempts = 0
         removed = 0
-        max_attempts = cells_to_remove * 10
+        max_attempts = cells_to_remove * self.max_attempts_multiplier
         
         while removed < cells_to_remove and attempts < max_attempts:
             row = random.randint(0, self.size - 1)
@@ -130,8 +134,8 @@ class SudokuGenerator:
                 backup = puzzle[row][col]
                 puzzle[row][col] = 0
                 
-                # Check if puzzle still has unique solution
-                if self.count_solutions(puzzle, 2) == 1:
+                # Check if puzzle still has unique solution (if required)
+                if not self.require_unique_solution or self.count_solutions(puzzle, 2) == 1:
                     removed += 1
                 else:
                     puzzle[row][col] = backup

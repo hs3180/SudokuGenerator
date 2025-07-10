@@ -8,13 +8,27 @@ Usage:
 
 import argparse
 import sys
-from typing import List, Tuple
+import random
+from typing import List, Tuple, Optional
 from sudoku_generator import SudokuGenerator
 from sudoku_printer import SudokuPrinter
 
-def generate_multiple_puzzles(size: int, difficulty: str, count: int) -> List[Tuple[List[List[int]], List[List[int]], str, int]]:
+def generate_multiple_puzzles(size: int, difficulty: str, count: int, seed: Optional[int] = None, 
+                            custom_difficulty: Optional[float] = None, max_attempts_multiplier: Optional[int] = None) -> List[Tuple[List[List[int]], List[List[int]], str, int]]:
     """Generate multiple sudoku puzzles."""
+    if seed is not None:
+        random.seed(seed)
+        
     generator = SudokuGenerator(size)
+    
+    # Override difficulty if custom percentage provided
+    if custom_difficulty is not None:
+        generator.difficulty_settings[size][difficulty] = custom_difficulty
+    
+    # Override max attempts multiplier if provided
+    if max_attempts_multiplier is not None:
+        generator.max_attempts_multiplier = max_attempts_multiplier
+    
     puzzles = []
     
     print(f"Generating {count} {size}×{size} sudoku puzzles ({difficulty} difficulty)...")
@@ -41,9 +55,13 @@ Examples:
     
     Generate mixed difficulty puzzles:
         python main.py --mixed --count 9 --per-page 3
+    
+    Custom difficulty and formatting:
+        python main.py --size 9 --difficulty normal --custom-difficulty 0.7 --cell-size 35 --font-size 18
         """
     )
     
+    # Basic puzzle settings
     parser.add_argument(
         "--size", 
         type=int, 
@@ -73,6 +91,149 @@ Examples:
         help="Number of puzzles per page (1-9). Default: 2"
     )
     
+    # Generation settings
+    parser.add_argument(
+        "--seed",
+        type=int,
+        help="Random seed for reproducible puzzle generation"
+    )
+    
+    parser.add_argument(
+        "--custom-difficulty",
+        type=float,
+        metavar="PERCENT",
+        help="Custom difficulty as percentage of cells to remove (0.1-0.9). Overrides --difficulty setting"
+    )
+    
+    parser.add_argument(
+        "--max-attempts-multiplier",
+        type=int,
+        default=10,
+        metavar="N",
+        help="Multiplier for maximum generation attempts (higher = more thorough but slower). Default: 10"
+    )
+    
+    parser.add_argument(
+        "--allow-multiple-solutions",
+        action="store_true",
+        help="Allow puzzles with multiple solutions (faster generation)"
+    )
+    
+    # Formatting settings
+    parser.add_argument(
+        "--cell-size",
+        type=int,
+        metavar="PIXELS",
+        help="Cell size in pixels. If not specified, uses size-appropriate defaults"
+    )
+    
+    parser.add_argument(
+        "--font-size",
+        type=int,
+        metavar="PIXELS", 
+        help="Font size in pixels. If not specified, uses size-appropriate defaults"
+    )
+    
+    parser.add_argument(
+        "--solution-cell-size",
+        type=int,
+        metavar="PIXELS",
+        help="Solution cell size in pixels. If not specified, uses size-appropriate defaults"
+    )
+    
+    parser.add_argument(
+        "--solution-font-size",
+        type=int,
+        metavar="PIXELS",
+        help="Solution font size in pixels. If not specified, uses size-appropriate defaults"
+    )
+    
+    parser.add_argument(
+        "--border-width",
+        type=int,
+        default=3,
+        metavar="PIXELS",
+        help="Grid border width in pixels. Default: 3"
+    )
+    
+    parser.add_argument(
+        "--cell-border-width",
+        type=int,
+        default=1,
+        metavar="PIXELS", 
+        help="Cell border width in pixels. Default: 1"
+    )
+    
+    parser.add_argument(
+        "--thick-border-width",
+        type=int,
+        default=3,
+        metavar="PIXELS",
+        help="Thick border width for box separators in pixels. Default: 3"
+    )
+    
+    # Color settings
+    parser.add_argument(
+        "--grid-color",
+        default="#000000",
+        metavar="COLOR",
+        help="Grid border color (hex code). Default: #000000 (black)"
+    )
+    
+    parser.add_argument(
+        "--cell-border-color",
+        default="#666666", 
+        metavar="COLOR",
+        help="Cell border color (hex code). Default: #666666 (gray)"
+    )
+    
+    parser.add_argument(
+        "--text-color",
+        default="#000000",
+        metavar="COLOR",
+        help="Text color (hex code). Default: #000000 (black)"
+    )
+    
+    parser.add_argument(
+        "--background-color",
+        default="#ffffff",
+        metavar="COLOR",
+        help="Cell background color (hex code). Default: #ffffff (white)"
+    )
+    
+    # Page layout settings
+    parser.add_argument(
+        "--page-margin",
+        default="0.5in",
+        metavar="SIZE",
+        help="Page margin size (CSS format, e.g., '0.5in', '20px'). Default: 0.5in"
+    )
+    
+    parser.add_argument(
+        "--puzzle-margin",
+        type=int,
+        default=20,
+        metavar="PIXELS",
+        help="Margin around each puzzle in pixels. Default: 20"
+    )
+    
+    parser.add_argument(
+        "--title-font-size",
+        type=int,
+        default=14,
+        metavar="PIXELS",
+        help="Puzzle title font size in pixels. Default: 14"
+    )
+    
+    parser.add_argument(
+        "--solution-title-font-size",
+        type=int,
+        default=12,
+        metavar="PIXELS",
+        help="Solution title font size in pixels. Default: 12"
+    )
+    
+    # Output settings
     parser.add_argument(
         "--no-solutions", 
         action="store_true",
@@ -92,18 +253,31 @@ Examples:
         help="Generate mixed size and difficulty puzzles"
     )
     
+    parser.add_argument(
+        "--print-info",
+        action="store_true",
+        help="Include puzzle information (difficulty, size) below each puzzle"
+    )
+    
     args = parser.parse_args()
     
-    # Validate puzzles per page
+    # Validation
     if args.per_page < 1 or args.per_page > 9:
         print("Error: Puzzles per page must be between 1 and 9")
         sys.exit(1)
     
-    # Validate count
     if args.count < 1:
         print("Error: Count must be at least 1")
         sys.exit(1)
-    
+        
+    if args.custom_difficulty is not None and not (0.1 <= args.custom_difficulty <= 0.9):
+        print("Error: Custom difficulty must be between 0.1 and 0.9")
+        sys.exit(1)
+        
+    if args.max_attempts_multiplier < 1:
+        print("Error: Max attempts multiplier must be at least 1")
+        sys.exit(1)
+
     try:
         if args.mixed:
             # Generate mixed puzzles
@@ -111,29 +285,69 @@ Examples:
             sizes = [4, 6, 9]
             difficulties = ["easy", "normal", "hard"]
             
+            if args.seed is not None:
+                random.seed(args.seed)
+            
             print(f"Generating {args.count} mixed sudoku puzzles...")
             
-            import random
             for i in range(args.count):
                 size = random.choice(sizes)
                 difficulty = random.choice(difficulties)
                 print(f"  Generating puzzle {i+1}/{args.count} ({size}×{size}, {difficulty})...", end=" ", flush=True)
                 
                 generator = SudokuGenerator(size)
+                
+                # Apply custom settings
+                if args.custom_difficulty is not None:
+                    generator.difficulty_settings[size][difficulty] = args.custom_difficulty
+                if args.max_attempts_multiplier is not None:
+                    generator.max_attempts_multiplier = args.max_attempts_multiplier
+                if args.allow_multiple_solutions:
+                    generator.require_unique_solution = False
+                
                 puzzle, solution = generator.generate_puzzle(difficulty)
                 puzzles.append((puzzle, solution, difficulty, size))
                 print("✓")
         else:
             # Generate uniform puzzles
-            puzzles = generate_multiple_puzzles(args.size, args.difficulty, args.count)
+            puzzles = generate_multiple_puzzles(
+                args.size, 
+                args.difficulty, 
+                args.count, 
+                args.seed,
+                args.custom_difficulty,
+                args.max_attempts_multiplier
+            )
         
-        # Generate HTML
+        # Generate HTML with custom formatting
         print("\nGenerating HTML...")
         printer = SudokuPrinter()
+        
+        # Apply formatting settings to printer
+        formatting_options = {
+            'cell_size': args.cell_size,
+            'font_size': args.font_size,
+            'solution_cell_size': args.solution_cell_size,
+            'solution_font_size': args.solution_font_size,
+            'border_width': args.border_width,
+            'cell_border_width': args.cell_border_width,
+            'thick_border_width': args.thick_border_width,
+            'grid_color': args.grid_color,
+            'cell_border_color': args.cell_border_color,
+            'text_color': args.text_color,
+            'background_color': args.background_color,
+            'page_margin': args.page_margin,
+            'puzzle_margin': args.puzzle_margin,
+            'title_font_size': args.title_font_size,
+            'solution_title_font_size': args.solution_title_font_size,
+            'show_puzzle_info': args.print_info
+        }
+        
         html_content = printer.generate_html_document(
             puzzles, 
             args.per_page, 
-            include_solutions=not args.no_solutions
+            include_solutions=not args.no_solutions,
+            formatting_options=formatting_options
         )
         
         # Save to file
@@ -142,6 +356,8 @@ Examples:
         print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
         print(f"Output saved to: {args.output}")
         print(f"Puzzles per page: {args.per_page}")
+        if args.seed is not None:
+            print(f"Random seed used: {args.seed}")
         if not args.no_solutions:
             print("Solutions included on separate page")
         
