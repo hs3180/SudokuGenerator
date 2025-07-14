@@ -264,10 +264,6 @@ class SudokuPrinter:
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
             html += self.generate_puzzles_page(page_puzzles, puzzles_per_page, show_puzzle_info)
         
-        # Add solutions if requested
-        if include_solutions:
-            html += self.generate_solutions_page(all_puzzles)
-        
         html += """
 </body>
 </html>
@@ -317,18 +313,15 @@ class SudokuPrinter:
     def generate_pdf_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]],
                              puzzles_per_page: int, include_solutions: bool = True,
                              formatting_options: Optional[Dict] = None, filename: str = "sudoku_puzzles.pdf"):
-        """Generate a PDF document with puzzles and (optionally) solutions."""
+        """Generate a PDF document with puzzles only (no solutions)."""
         options = formatting_options or {}
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.set_auto_page_break(auto=True, margin=10)
         show_puzzle_info = options.get('show_puzzle_info', False)
-        cell_size = options.get('cell_size') or 20
-        font_size = options.get('font_size') or 12
-        solution_cell_size = options.get('solution_cell_size') or 12
-        solution_font_size = options.get('solution_font_size') or 8
-        title_font_size = options.get('title_font_size') or 14
-        solution_title_font_size = options.get('solution_title_font_size') or 12
-        puzzle_margin = options.get('puzzle_margin') or 10
+        cell_size = options.get('cell_size', 20)
+        font_size = options.get('font_size', 12)
+        title_font_size = options.get('title_font_size', 14)
+        puzzle_margin = options.get('puzzle_margin', 10)
         # Puzzles per page layout
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
@@ -352,22 +345,6 @@ class SudokuPrinter:
                     pdf.set_font("Arial", size=10)
                     pdf.cell(cell_size * size, 6, f"Size: {size}x{size} | Difficulty: {difficulty.title()}", ln=2, align="C")
                 x += (cell_size * size) + puzzle_margin
-        # Solutions page
-        if include_solutions:
-            pdf.add_page()
-            pdf.set_font("Arial", "B", solution_title_font_size)
-            pdf.cell(0, 10, "Solutions", ln=True, align="C")
-            x0, y0 = 20, 30
-            x, y = x0, y0
-            for idx, (puzzle, solution, difficulty, size) in enumerate(all_puzzles):
-                if idx > 0 and idx % max_col == 0:
-                    x = x0
-                    y += (solution_cell_size * size) + puzzle_margin + 10
-                pdf.set_xy(x, y)
-                pdf.set_font("Arial", "B", solution_title_font_size)
-                pdf.cell(solution_cell_size * size, 8, f"Solution #{idx+1} - {size}x{size}", ln=2, align="C")
-                self.grid_to_pdf(pdf, solution, size, x, y + 10, solution_cell_size, solution_font_size, is_solution=True)
-                x += (solution_cell_size * size) + puzzle_margin
         pdf.output(filename)
         print(f"Sudoku puzzles saved to {filename}")
         print(f"Open this file to print or share the puzzles as a PDF.")
