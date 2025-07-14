@@ -322,13 +322,13 @@ class SudokuPrinter:
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.set_auto_page_break(auto=True, margin=10)
         show_puzzle_info = options.get('show_puzzle_info', False)
-        cell_size = options.get('cell_size', 20)
-        font_size = options.get('font_size', 12)
-        solution_cell_size = options.get('solution_cell_size', 12)
-        solution_font_size = options.get('solution_font_size', 8)
-        title_font_size = options.get('title_font_size', 14)
-        solution_title_font_size = options.get('solution_title_font_size', 12)
-        puzzle_margin = options.get('puzzle_margin', 10)
+        cell_size = options.get('cell_size') or 20
+        font_size = options.get('font_size') or 12
+        solution_cell_size = options.get('solution_cell_size') or 12
+        solution_font_size = options.get('solution_font_size') or 8
+        title_font_size = options.get('title_font_size') or 14
+        solution_title_font_size = options.get('solution_title_font_size') or 12
+        puzzle_margin = options.get('puzzle_margin') or 10
         # Puzzles per page layout
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
