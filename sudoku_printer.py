@@ -318,10 +318,17 @@ class SudokuPrinter:
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.set_auto_page_break(auto=True, margin=10)
         show_puzzle_info = options.get('show_puzzle_info', False)
-        cell_size = options.get('cell_size', 20)
-        font_size = options.get('font_size', 12)
+        
+        # Get size-appropriate defaults for the first puzzle
+        first_size = all_puzzles[0][3] if all_puzzles else 9
+        default_cell_size = self.default_settings[first_size]['cell_size']
+        default_font_size = self.default_settings[first_size]['font_size']
+        
+        cell_size = options.get('cell_size', default_cell_size)
+        font_size = options.get('font_size', default_font_size)
         title_font_size = options.get('title_font_size', 14)
         puzzle_margin = options.get('puzzle_margin', 10)
+        
         # Puzzles per page layout
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
@@ -330,8 +337,10 @@ class SudokuPrinter:
             pdf.cell(0, 10, "Sudoku Puzzles", ln=True, align="C")
             x0, y0 = 20, 30
             x, y = x0, y0
-            max_row, max_col = self.calculate_puzzles_per_row(page_puzzles[0][3], puzzles_per_page)
-            grid_size = page_puzzles[0][3]
+            
+            # Calculate layout for this page
+            max_row, max_col = self.calculate_puzzles_per_row(first_size, puzzles_per_page)
+            
             for idx, (puzzle, solution, difficulty, size) in enumerate(page_puzzles):
                 if idx > 0 and idx % max_col == 0:
                     x = x0
