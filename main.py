@@ -259,6 +259,12 @@ Examples:
         help="Include puzzle information (difficulty, size) below each puzzle"
     )
     
+    parser.add_argument(
+        "--pdf",
+        action="store_true",
+        help="Output as PDF instead of HTML (or use .pdf extension in --output)"
+    )
+    
     args = parser.parse_args()
     
     # Validation
@@ -319,11 +325,8 @@ Examples:
                 args.max_attempts_multiplier
             )
         
-        # Generate HTML with custom formatting
-        print("\nGenerating HTML...")
+        # Generate output with custom formatting
         printer = SudokuPrinter()
-        
-        # Apply formatting settings to printer
         formatting_options = {
             'cell_size': args.cell_size,
             'font_size': args.font_size,
@@ -342,17 +345,25 @@ Examples:
             'solution_title_font_size': args.solution_title_font_size,
             'show_puzzle_info': args.print_info
         }
-        
-        html_content = printer.generate_html_document(
-            puzzles, 
-            args.per_page, 
-            include_solutions=not args.no_solutions,
-            formatting_options=formatting_options
-        )
-        
-        # Save to file
-        printer.save_to_file(html_content, args.output)
-        
+        output_is_pdf = args.pdf or args.output.lower().endswith('.pdf')
+        if output_is_pdf:
+            print("\nGenerating PDF...")
+            printer.generate_pdf_document(
+                puzzles,
+                args.per_page,
+                include_solutions=not args.no_solutions,
+                formatting_options=formatting_options,
+                filename=args.output
+            )
+        else:
+            print("\nGenerating HTML...")
+            html_content = printer.generate_html_document(
+                puzzles, 
+                args.per_page, 
+                include_solutions=not args.no_solutions,
+                formatting_options=formatting_options
+            )
+            printer.save_to_file(html_content, args.output)
         print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
         print(f"Output saved to: {args.output}")
         print(f"Puzzles per page: {args.per_page}")
@@ -360,11 +371,15 @@ Examples:
             print(f"Random seed used: {args.seed}")
         if not args.no_solutions:
             print("Solutions included on separate page")
-        
-        print("\nTo print:")
-        print(f"1. Open {args.output} in your web browser")
-        print("2. Use Ctrl+P (or Cmd+P on Mac) to print")
-        print("3. Make sure to enable 'Background graphics' in print settings")
+        if output_is_pdf:
+            print("\nTo print:")
+            print(f"1. Open {args.output} in your PDF viewer")
+            print("2. Use the print function to print the puzzles")
+        else:
+            print("\nTo print:")
+            print(f"1. Open {args.output} in your web browser")
+            print("2. Use Ctrl+P (or Cmd+P on Mac) to print")
+            print("3. Make sure to enable 'Background graphics' in print settings")
         
     except KeyboardInterrupt:
         print("\nGeneration cancelled by user.")
