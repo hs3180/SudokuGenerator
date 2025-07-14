@@ -351,7 +351,6 @@ Examples:
             printer.generate_pdf_document(
                 puzzles,
                 args.per_page,
-                include_solutions=not args.no_solutions,
                 formatting_options=formatting_options,
                 filename=args.output
             )
@@ -360,7 +359,6 @@ Examples:
             html_content = printer.generate_html_document(
                 puzzles, 
                 args.per_page, 
-                include_solutions=not args.no_solutions,
                 formatting_options=formatting_options
             )
             printer.save_to_file(html_content, args.output)
