@@ -324,8 +324,8 @@ class SudokuPrinter:
         default_cell_size = self.default_settings[first_size]['cell_size']
         default_font_size = self.default_settings[first_size]['font_size']
         
-        cell_size = options.get('cell_size', default_cell_size)
-        font_size = options.get('font_size', default_font_size)
+        cell_size = options.get('cell_size') or default_cell_size
+        font_size = options.get('font_size') or default_font_size
         title_font_size = options.get('title_font_size', 14)
         puzzle_margin = options.get('puzzle_margin', 10)
         
