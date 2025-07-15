@@ -97,8 +97,8 @@ class SudokuPrinter:
             defaults = self.default_settings[size]
             cell_size = options.get('cell_size', defaults['cell_size'])
             font_size = options.get('font_size', defaults['font_size'])
-            solution_cell_size = options.get('solution_cell_size', defaults['solution_cell_size'])
-            solution_font_size = options.get('solution_font_size', defaults['solution_font_size'])
+            solution_cell_size = options.get('solution_cell_size') or defaults['solution_cell_size']
+            solution_font_size = options.get('solution_font_size') or defaults['solution_font_size']
             
             # Determine box separator positions
             if size == 4:
@@ -324,8 +324,8 @@ class SudokuPrinter:
         default_cell_size = self.default_settings[first_size]['cell_size']
         default_font_size = self.default_settings[first_size]['font_size']
         
-        cell_size = options.get('cell_size', default_cell_size)
-        font_size = options.get('font_size', default_font_size)
+        cell_size = options.get('cell_size') or default_cell_size
+        font_size = options.get('font_size') or default_font_size
         title_font_size = options.get('title_font_size', 14)
         puzzle_margin = options.get('puzzle_margin', 10)
         
