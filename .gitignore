@@ -165,6 +165,15 @@ cython_debug/
 *.html
 sudoku_puzzles*.html
 test_*.html
+puzzle_*.html
+solution_*.html
+sudoku_output*.html
+
+# Generated puzzle files
+puzzles/
+solutions/
+output/
+generated/
 
 # Temporary files
 *.tmp
@@ -175,3 +184,25 @@ Thumbs.db
 # Local configuration files
 config.local.*
 *.local
+
+# Log files
+*.log
+logs/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# IDE and editor files (additional)
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store?
+ehthumbs.db
+Icon?
