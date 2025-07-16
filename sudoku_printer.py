@@ -329,21 +329,31 @@ class SudokuPrinter:
         title_font_size = options.get('title_font_size', 14)
         puzzle_margin = options.get('puzzle_margin', 10)
         
-        # 每个数独单独一页
-        for i, (puzzle, solution, difficulty, size) in enumerate(all_puzzles):
+        # Puzzles per page layout
+        for i in range(0, len(all_puzzles), puzzles_per_page):
+            page_puzzles = all_puzzles[i:i + puzzles_per_page]
             pdf.add_page()
             pdf.set_font("Arial", "B", title_font_size)
             pdf.cell(0, 10, "Sudoku Puzzles", ln=True, align="C")
             x0, y0 = 20, 30
             x, y = x0, y0
-            pdf.set_xy(x, y)
-            pdf.set_font("Arial", "B", title_font_size)
-            pdf.cell(cell_size * size, 8, f"Puzzle #{i+1} - {size}x{size} ({difficulty.title()})", ln=2, align="C")
-            self.grid_to_pdf(pdf, puzzle, size, x, y + 10, cell_size, font_size)
-            if show_puzzle_info:
-                pdf.set_xy(x, y + 10 + cell_size * size)
-                pdf.set_font("Arial", size=10)
-                pdf.cell(cell_size * size, 6, f"Size: {size}x{size} | Difficulty: {difficulty.title()}", ln=2, align="C")
+            
+            # Calculate layout for this page
+            max_row, max_col = self.calculate_puzzles_per_row(first_size, puzzles_per_page)
+            
+            for idx, (puzzle, solution, difficulty, size) in enumerate(page_puzzles):
+                if idx > 0 and idx % max_col == 0:
+                    x = x0
+                    y += (cell_size * size) + puzzle_margin + 10
+                pdf.set_xy(x, y)
+                pdf.set_font("Arial", "B", title_font_size)
+                pdf.cell(cell_size * size, 8, f"Puzzle #{i+idx+1} - {size}x{size} ({difficulty.title()})", ln=2, align="C")
+                self.grid_to_pdf(pdf, puzzle, size, x, y + 10, cell_size, font_size)
+                if show_puzzle_info:
+                    pdf.set_xy(x, y + 10 + cell_size * size)
+                    pdf.set_font("Arial", size=10)
+                    pdf.cell(cell_size * size, 6, f"Size: {size}x{size} | Difficulty: {difficulty.title()}", ln=2, align="C")
+                x += (cell_size * size) + puzzle_margin
         pdf.output(filename)
         print(f"Sudoku puzzles saved to {filename}")
         print(f"Open this file to print or share the puzzles as a PDF.")
