@@ -279,35 +279,47 @@ class SudokuPrinter:
 
     def grid_to_pdf(self, pdf: FPDF, grid: List[List[int]], size: int, x: float, y: float, cell_size: float, font_size: int, is_solution: bool = False):
         """Draw a sudoku grid on the PDF at position (x, y)."""
-        pdf.set_xy(x, y)
         n = size
+        
+        # Draw all cell borders first
         for row_idx, row in enumerate(grid):
             for col_idx, cell in enumerate(row):
                 xpos = x + col_idx * cell_size
                 ypos = y + row_idx * cell_size
-                pdf.set_xy(xpos, ypos)
                 pdf.set_draw_color(0, 0, 0)
                 pdf.set_line_width(0.5)
                 pdf.rect(xpos, ypos, cell_size, cell_size)
+        
+        # Fill in the numbers
+        for row_idx, row in enumerate(grid):
+            for col_idx, cell in enumerate(row):
                 if cell != 0:
+                    xpos = x + col_idx * cell_size
+                    ypos = y + row_idx * cell_size
                     pdf.set_font("Arial", style="B" if not is_solution else "", size=font_size)
                     pdf.set_text_color(0, 0, 0)
-                    pdf.set_xy(xpos, ypos + 0.1 * cell_size)
-                    pdf.cell(cell_size, cell_size, str(cell), align="C")
+                    # Center the text in the cell
+                    text_width = pdf.get_string_width(str(cell))
+                    text_x = xpos + (cell_size - text_width) / 2
+                    text_y = ypos + (cell_size - font_size) / 2
+                    pdf.set_xy(text_x, text_y)
+                    pdf.cell(text_width, font_size, str(cell), align="L")
+        
         # Draw thick borders for boxes
         thick = 1.5
         if n == 4:
             box = 2
         elif n == 6:
-            box = 2
+            box = 3  # 6x6 should have 3x2 boxes
         else:
             box = 3
+        
         for i in range(n + 1):
             lw = thick if i % box == 0 else 0.5
-            # Horizontal
+            # Horizontal lines
             pdf.set_line_width(lw)
             pdf.line(x, y + i * cell_size, x + n * cell_size, y + i * cell_size)
-            # Vertical
+            # Vertical lines
             pdf.line(x + i * cell_size, y, x + i * cell_size, y + n * cell_size)
 
     def generate_pdf_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]],
@@ -316,7 +328,7 @@ class SudokuPrinter:
         """Generate a PDF document with puzzles only (no solutions)."""
         options = formatting_options or {}
         pdf = FPDF(orientation="P", unit="mm", format="A4")
-        pdf.set_auto_page_break(auto=True, margin=10)
+        pdf.set_auto_page_break(auto=True, margin=15)
         show_puzzle_info = options.get('show_puzzle_info', False)
         
         # Get size-appropriate defaults for the first puzzle
@@ -327,33 +339,66 @@ class SudokuPrinter:
         cell_size = options.get('cell_size') or default_cell_size
         font_size = options.get('font_size') or default_font_size
         title_font_size = options.get('title_font_size', 14)
-        puzzle_margin = options.get('puzzle_margin', 10)
+        puzzle_margin = options.get('puzzle_margin', 20)
+        
+        # Get page dimensions
+        page_width = pdf.w
+        page_height = pdf.h
         
         # Puzzles per page layout
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
             pdf.add_page()
+            
+            # Add page title
             pdf.set_font("Arial", "B", title_font_size)
-            pdf.cell(0, 10, "Sudoku Puzzles", ln=True, align="C")
-            x0, y0 = 20, 30
+            pdf.cell(0, 15, "Sudoku Puzzles", ln=True, align="C")
+            
+            # Calculate starting position
+            x0, y0 = 20, 35
             x, y = x0, y0
             
             # Calculate layout for this page
             max_row, max_col = self.calculate_puzzles_per_row(first_size, puzzles_per_page)
             
             for idx, (puzzle, solution, difficulty, size) in enumerate(page_puzzles):
+                # Check if we need to move to next row
                 if idx > 0 and idx % max_col == 0:
                     x = x0
-                    y += (cell_size * size) + puzzle_margin + 10
+                    y += (cell_size * size) + puzzle_margin + 15
+                
+                # Check if we need a new page
+                puzzle_height = (cell_size * size) + 20  # Include title space
+                if y + puzzle_height > page_height - 20:  # Leave margin at bottom
+                    pdf.add_page()
+                    pdf.set_font("Arial", "B", title_font_size)
+                    pdf.cell(0, 15, "Sudoku Puzzles", ln=True, align="C")
+                    x, y = x0, 35
+                
+                # Add puzzle title
                 pdf.set_xy(x, y)
                 pdf.set_font("Arial", "B", title_font_size)
-                pdf.cell(cell_size * size, 8, f"Puzzle #{i+idx+1} - {size}x{size} ({difficulty.title()})", ln=2, align="C")
+                title_text = f"Puzzle #{i+idx+1} - {size}×{size} ({difficulty.title()})"
+                pdf.cell(cell_size * size, 8, title_text, ln=2, align="C")
+                
+                # Draw the grid
                 self.grid_to_pdf(pdf, puzzle, size, x, y + 10, cell_size, font_size)
+                
+                # Add puzzle info if requested
                 if show_puzzle_info:
-                    pdf.set_xy(x, y + 10 + cell_size * size)
+                    pdf.set_xy(x, y + 10 + cell_size * size + 5)
                     pdf.set_font("Arial", size=10)
-                    pdf.cell(cell_size * size, 6, f"Size: {size}x{size} | Difficulty: {difficulty.title()}", ln=2, align="C")
+                    info_text = f"Size: {size}×{size} | Difficulty: {difficulty.title()}"
+                    pdf.cell(cell_size * size, 6, info_text, ln=2, align="C")
+                
+                # Move to next column
                 x += (cell_size * size) + puzzle_margin
+                
+                # Check if next puzzle would exceed page width
+                if x + (cell_size * size) > page_width - 20:
+                    x = x0
+                    y += (cell_size * size) + puzzle_margin + 15
+        
         pdf.output(filename)
         print(f"Sudoku puzzles saved to {filename}")
         print(f"Open this file to print or share the puzzles as a PDF.")
