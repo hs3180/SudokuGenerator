@@ -206,3 +206,6 @@ logs/
 .DS_Store?
 ehthumbs.db
 Icon?
+
+# 忽略所有 PDF 文件
+*.pdf
