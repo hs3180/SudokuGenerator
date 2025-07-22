@@ -1,5 +1,5 @@
 from typing import List, Tuple, Dict, Optional
-from sudoku_generator import SudokuGenerator
+from sudoku.generator import SudokuGenerator
 from fpdf import FPDF
 
 class SudokuPrinter:
@@ -287,7 +287,7 @@ class SudokuPrinter:
                 xpos = x + col_idx * cell_size
                 ypos = y + row_idx * cell_size
                 pdf.set_draw_color(0, 0, 0)
-                pdf.set_line_width(0.5)
+                pdf.set_line_width(0.2)
                 pdf.rect(xpos, ypos, cell_size, cell_size)
         
         # Fill in the numbers
@@ -298,15 +298,12 @@ class SudokuPrinter:
                     ypos = y + row_idx * cell_size
                     pdf.set_font("Arial", style="B" if not is_solution else "", size=font_size)
                     pdf.set_text_color(0, 0, 0)
-                    # Center the text in the cell
-                    text_width = pdf.get_string_width(str(cell))
-                    text_x = xpos + (cell_size - text_width) / 2
-                    text_y = ypos + (cell_size - font_size) / 2
-                    pdf.set_xy(text_x, text_y)
-                    pdf.cell(text_width, font_size, str(cell), align="L")
+                    # Center the text in the cell (both horizontally and vertically)
+                    pdf.set_xy(xpos, ypos)
+                    pdf.cell(cell_size, cell_size, str(cell), align="C")
         
         # Draw thick borders for boxes
-        thick = 1.5
+        thick = 0.7
         if n == 4:
             box = 2
         elif n == 6:
@@ -315,7 +312,7 @@ class SudokuPrinter:
             box = 3
         
         for i in range(n + 1):
-            lw = thick if i % box == 0 else 0.5
+            lw = thick if i % box == 0 else 0.2
             # Horizontal lines
             pdf.set_line_width(lw)
             pdf.line(x, y + i * cell_size, x + n * cell_size, y + i * cell_size)
@@ -334,63 +331,61 @@ class SudokuPrinter:
         # Get size-appropriate defaults for the first puzzle
         first_size = all_puzzles[0][3] if all_puzzles else 9
         n = first_size
-        page_width = pdf.w - 20  # 10mm margin each side
-        page_height = pdf.h - 20  # 10mm margin top/bottom
+        page_width = pdf.w  # 不再减去边距，直接用A4全宽
+        page_height = pdf.h
 
-        # 计算行列数
-        if puzzles_per_page == 1:
-            rows, cols = 1, 1
-        elif puzzles_per_page <= 2:
-            rows, cols = 1, 2
-        elif puzzles_per_page <= 4:
-            rows, cols = 2, 2
-        elif puzzles_per_page <= 6:
-            rows, cols = 2, 3
-        else:
-            rows, cols = 3, 3
-
-        # 计算最大 cell_size 以适应页面
+        # 固定每页2x2网格
+        rows, cols = 2, 2
+        page_margin = 12  # 页面上下左右边距，单位mm
+        region_padding = 8  # 每个数独区域内边距，单位mm
         title_space = 10
         info_space = 8 if show_puzzle_info else 0
-        v_margin = 4
-        h_margin = 4
-        grid_total_height = (page_height - (rows-1)*v_margin) / rows
-        grid_total_width = (page_width - (cols-1)*h_margin) / cols
+        content_w = page_width - 2 * page_margin
+        content_h = page_height - 2 * page_margin
+        grid_w = content_w / cols
+        grid_h = content_h / rows
+        # 计算每个区域内最大cell_size
         cell_size = min(
-            (grid_total_height - title_space - info_space) / n,
-            (grid_total_width) / n
+            (grid_w - 2 * region_padding) / n,
+            (grid_h - 2 * region_padding - title_space - info_space) / n
         )
-        cell_size = int(cell_size)
-        font_size = max(10, int(cell_size * 0.5))
-        title_font_size = max(8, int(cell_size * 0.5))
-        puzzle_margin = 0  # 已经用 h_margin/v_margin 控制
-
+        sudoku_w = cell_size * n
+        sudoku_h = cell_size * n
+        content_block_h = title_space + sudoku_h + info_space
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
             pdf.add_page()
-            # 标题
-            pdf.set_font("Arial", "B", 14)
-            pdf.cell(0, 10, "Sudoku Puzzles", ln=True, align="C")
-
-            # 计算每个格子的左上角坐标
             for idx, (puzzle, solution, difficulty, size) in enumerate(page_puzzles):
                 row = idx // cols
                 col = idx % cols
-                x = 10 + col * (cell_size * n + h_margin)
-                y = 20 + row * (cell_size * n + v_margin + title_space + info_space)
+                # 区域左上角
+                region_x = page_margin + col * grid_w + region_padding
+                region_y = page_margin + row * grid_h + region_padding
+                # 区域内垂直居中内容块
+                region_inner_h = grid_h - 2 * region_padding
+                y_offset = (region_inner_h - content_block_h) / 2
+                # 居中数独和标题
+                x = region_x + (grid_w - 2 * region_padding - sudoku_w) / 2
+                y = region_y + y_offset + title_space
                 # 标题
-                pdf.set_xy(x, y)
+                pdf.set_xy(region_x, region_y + y_offset)
+                title_font_size = max(8, int(cell_size * 0.5))
                 pdf.set_font("Arial", "B", title_font_size)
-                title_text = f"Puzzle #{i+idx+1} - {size}×{size} ({difficulty.title()})"
-                pdf.cell(cell_size * n, title_space, title_text, ln=2, align="C")
-                # 数独格
-                self.grid_to_pdf(pdf, puzzle, size, x, y + title_space, cell_size, font_size)
-                # info
+                # Name 靠左，Time 靠右
+                name_text = "Name  " + "_"*12
+                time_text = "Time  " + "_"*12
+                # Name
+                pdf.cell((grid_w - 2 * region_padding) * 0.5, title_space, name_text, ln=0, align="L")
+                # Time
+                pdf.cell((grid_w - 2 * region_padding) * 0.5, title_space, time_text, ln=2, align="R")
+                # 数独
+                self.grid_to_pdf(pdf, puzzle, size, x, y, cell_size, int(cell_size * 0.95))
+                # 下方信息
                 if show_puzzle_info:
-                    pdf.set_xy(x, y + title_space + cell_size * n)
+                    pdf.set_xy(region_x, y + sudoku_h)
                     pdf.set_font("Arial", size=8)
                     info_text = f"Size: {size}×{size} | Difficulty: {difficulty.title()}"
-                    pdf.cell(cell_size * n, info_space, info_text, ln=2, align="C")
+                    pdf.cell(grid_w - 2 * region_padding, info_space, info_text, ln=2, align="C")
         pdf.output(filename)
         print(f"Sudoku puzzles saved to {filename}")
         print(f"Open this file to print or share the puzzles as a PDF.")

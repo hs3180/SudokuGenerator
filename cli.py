@@ -10,8 +10,8 @@ import argparse
 import sys
 import random
 from typing import List, Tuple, Optional
-from sudoku_generator import SudokuGenerator
-from sudoku_printer import SudokuPrinter
+from sudoku.generator import SudokuGenerator
+from sudoku.printer import SudokuPrinter
 
 def generate_multiple_puzzles(size: int, difficulty: str, count: int, seed: Optional[int] = None, 
                             custom_difficulty: Optional[float] = None, max_attempts_multiplier: Optional[int] = None) -> List[Tuple[List[List[int]], List[List[int]], str, int]]:
@@ -243,8 +243,8 @@ Examples:
     parser.add_argument(
         "--output", 
         type=str, 
-        default="sudoku_puzzles.html",
-        help="Output filename. Default: sudoku_puzzles.html"
+        default="sudoku_puzzles.pdf",
+        help="Output filename. Default: sudoku_puzzles.pdf"
     )
     
     parser.add_argument(
@@ -345,7 +345,10 @@ Examples:
             'solution_title_font_size': args.solution_title_font_size,
             'show_puzzle_info': args.print_info
         }
-        output_is_pdf = args.pdf or args.output.lower().endswith('.pdf')
+        # 默认输出PDF：只要--output未指定或为.pdf结尾，或未指定--pdf参数时，默认输出PDF
+        output_is_pdf = True if (not args.output or args.output.lower().endswith('.pdf')) else False
+        if args.pdf:
+            output_is_pdf = True
         if output_is_pdf:
             print("\nGenerating PDF...")
             printer.generate_pdf_document(
