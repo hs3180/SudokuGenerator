@@ -75,12 +75,10 @@ class SudokuGenerator:
     def generate_complete_grid(self) -> List[List[int]]:
         """Generate a complete valid sudoku grid."""
         grid = [[0 for _ in range(self.size)] for _ in range(self.size)]
-        
-        # Fill diagonal boxes first for better performance
-        for i in range(0, self.size, max(self.box_height, self.box_width)):
-            self.fill_box(grid, i, i)
-        
-        # Solve the rest
+        # 只对4x4和9x9预填对角box，6x6直接回溯生成
+        if self.size in (4, 9):
+            for i in range(0, self.size, max(self.box_height, self.box_width)):
+                self.fill_box(grid, i, i)
         self.solve(grid)
         return grid
     
