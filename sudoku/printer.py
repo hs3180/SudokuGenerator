@@ -305,18 +305,21 @@ class SudokuPrinter:
         # Draw thick borders for boxes
         thick = 0.7
         if n == 4:
-            box = 2
+            box_w, box_h = 2, 2
         elif n == 6:
-            box = 3  # 6x6 should have 3x2 boxes
+            box_w, box_h = 3, 2  # 6x6: 3列为一大格，2行为一大格
         else:
-            box = 3
-        
+            box_w, box_h = 3, 3
+
+        # 横线（每box_h行加粗）
         for i in range(n + 1):
-            lw = thick if i % box == 0 else 0.2
-            # Horizontal lines
+            lw = thick if i % box_h == 0 else 0.2
             pdf.set_line_width(lw)
             pdf.line(x, y + i * cell_size, x + n * cell_size, y + i * cell_size)
-            # Vertical lines
+        # 竖线（每box_w列加粗）
+        for i in range(n + 1):
+            lw = thick if i % box_w == 0 else 0.2
+            pdf.set_line_width(lw)
             pdf.line(x + i * cell_size, y, x + i * cell_size, y + n * cell_size)
 
     def generate_pdf_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]],
