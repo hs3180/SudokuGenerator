@@ -205,7 +205,7 @@ class SudokuPrinter:
             return 3, 3  # Max 9 puzzles per page
     
     def generate_puzzles_page(self, puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]], 
-                            puzzles_per_page: int, show_puzzle_info: bool = False) -> str:
+                            puzzles_per_page: int, show_puzzle_info: bool = False, from_files: bool = False) -> str:
         """Generate HTML for a page of puzzles."""
         html = '<div class="page">\n'
         html += '<div class="header">\n'
@@ -215,10 +215,17 @@ class SudokuPrinter:
         puzzle_num = 1
         for puzzle, solution, difficulty, size in puzzles:
             html += '<div class="puzzle-container">\n'
-            html += f'  <div class="puzzle-title">Puzzle #{puzzle_num} - {size}×{size} ({difficulty.title()})</div>\n'
+            if from_files:
+                # difficulty field contains filename when reading from files
+                html += f'  <div class="puzzle-title">Puzzle #{puzzle_num} - {size}×{size} ({difficulty})</div>\n'
+            else:
+                html += f'  <div class="puzzle-title">Puzzle #{puzzle_num} - {size}×{size} ({difficulty.title()})</div>\n'
             html += self.grid_to_html(puzzle, size)
             if show_puzzle_info:
-                html += f'  <div class="puzzle-info">Size: {size}×{size} | Difficulty: {difficulty.title()}</div>\n'
+                if from_files:
+                    html += f'  <div class="puzzle-info">Size: {size}×{size} | File: {difficulty}</div>\n'
+                else:
+                    html += f'  <div class="puzzle-info">Size: {size}×{size} | Difficulty: {difficulty.title()}</div>\n'
             html += '</div>\n'
             puzzle_num += 1
         
@@ -243,7 +250,7 @@ class SudokuPrinter:
     
     def generate_html_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]], 
                              puzzles_per_page: int, include_solutions: bool = True, 
-                             formatting_options: Optional[Dict] = None) -> str:
+                             formatting_options: Optional[Dict] = None, from_files: bool = False) -> str:
         """Generate complete HTML document with puzzles."""
         options = formatting_options or {}
         show_puzzle_info = options.get('show_puzzle_info', False)
@@ -262,7 +269,7 @@ class SudokuPrinter:
         # Split puzzles into pages
         for i in range(0, len(all_puzzles), puzzles_per_page):
             page_puzzles = all_puzzles[i:i + puzzles_per_page]
-            html += self.generate_puzzles_page(page_puzzles, puzzles_per_page, show_puzzle_info)
+            html += self.generate_puzzles_page(page_puzzles, puzzles_per_page, show_puzzle_info, from_files)
         
         html += """
 </body>
@@ -324,7 +331,7 @@ class SudokuPrinter:
 
     def generate_pdf_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]],
                              puzzles_per_page: int, include_solutions: bool = True,
-                             formatting_options: Optional[Dict] = None, filename: str = "sudoku_puzzles.pdf"):
+                             formatting_options: Optional[Dict] = None, filename: str = "sudoku_puzzles.pdf", from_files: bool = False):
         """Generate a PDF document with puzzles only (no solutions), auto-fit puzzles per page."""
         options = formatting_options or {}
         pdf = FPDF(orientation="P", unit="mm", format="A4")
@@ -387,7 +394,10 @@ class SudokuPrinter:
                 if show_puzzle_info:
                     pdf.set_xy(region_x, y + sudoku_h)
                     pdf.set_font("Arial", size=8)
-                    info_text = f"Size: {size}×{size} | Difficulty: {difficulty.title()}"
+                    if from_files:
+                        info_text = f"Size: {size}×{size} | File: {difficulty}"
+                    else:
+                        info_text = f"Size: {size}×{size} | Difficulty: {difficulty.title()}"
                     pdf.cell(grid_w - 2 * region_padding, info_space, info_text, ln=2, align="C")
         pdf.output(filename)
         print(f"Sudoku puzzles saved to {filename}")

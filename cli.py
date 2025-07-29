@@ -9,9 +9,11 @@ Usage:
 import argparse
 import sys
 import random
+import glob
 from typing import List, Tuple, Optional
 from sudoku.generator import SudokuGenerator
 from sudoku.printer import SudokuPrinter
+from sudoku.parser import SudokuParser
 
 def generate_multiple_puzzles(size: int, difficulty: str, count: int, seed: Optional[int] = None, 
                             custom_difficulty: Optional[float] = None, max_attempts_multiplier: Optional[int] = None) -> List[Tuple[List[List[int]], List[List[int]], str, int]]:
@@ -48,16 +50,22 @@ def main():
         epilog="""
 Examples:
     Generate 4 normal 9×9 puzzles, 2 per page:
-        python main.py --size 9 --difficulty normal --count 4 --per-page 2
+        python cli.py --size 9 --difficulty normal --count 4 --per-page 2
     
     Generate 6 easy 4×4 puzzles, 4 per page:
-        python main.py --size 4 --difficulty easy --count 6 --per-page 4
+        python cli.py --size 4 --difficulty easy --count 6 --per-page 4
     
     Generate mixed difficulty puzzles:
-        python main.py --mixed --count 9 --per-page 3
+        python cli.py --mixed --count 9 --per-page 3
+    
+    Read puzzles from specific files:
+        python cli.py --files Easy1.txt Easy2.txt Easy3.txt --per-page 2
+    
+    Read puzzles using file pattern:
+        python cli.py --file-pattern "Easy*.txt" --per-page 2
     
     Custom difficulty and formatting:
-        python main.py --size 9 --difficulty normal --custom-difficulty 0.7 --cell-size 35 --font-size 18
+        python cli.py --size 9 --difficulty normal --custom-difficulty 0.7 --cell-size 35 --font-size 18
         """
     )
     
@@ -254,6 +262,19 @@ Examples:
     )
     
     parser.add_argument(
+        "--files",
+        nargs='+',
+        metavar="FILE",
+        help="Read sudoku puzzles from text files instead of generating new ones"
+    )
+    
+    parser.add_argument(
+        "--file-pattern",
+        metavar="PATTERN",
+        help="Read sudoku puzzles from files matching pattern (e.g., 'Easy*.txt')"
+    )
+    
+    parser.add_argument(
         "--print-info",
         action="store_true",
         help="Include puzzle information (difficulty, size) below each puzzle"
@@ -272,9 +293,26 @@ Examples:
         print("Error: Puzzles per page must be between 1 and 9")
         sys.exit(1)
     
-    if args.count < 1:
-        print("Error: Count must be at least 1")
-        sys.exit(1)
+    # Check if reading from files
+    reading_from_files = args.files is not None or args.file_pattern is not None
+    
+    if not reading_from_files:
+        if args.count < 1:
+            print("Error: Count must be at least 1")
+            sys.exit(1)
+    else:
+        # Validate file arguments
+        if args.files is not None and args.file_pattern is not None:
+            print("Error: Cannot use both --files and --file-pattern")
+            sys.exit(1)
+        
+        if args.files is not None and len(args.files) == 0:
+            print("Error: No files specified")
+            sys.exit(1)
+        
+        if args.file_pattern is not None and not args.file_pattern.strip():
+            print("Error: File pattern cannot be empty")
+            sys.exit(1)
         
     if args.custom_difficulty is not None and not (0.1 <= args.custom_difficulty <= 0.9):
         print("Error: Custom difficulty must be between 0.1 and 0.9")
@@ -285,7 +323,28 @@ Examples:
         sys.exit(1)
 
     try:
-        if args.mixed:
+        if reading_from_files:
+            # Read puzzles from files
+            parser = SudokuParser()
+            
+            if args.files is not None:
+                filepaths = args.files
+            else:  # args.file_pattern is not None
+                filepaths = glob.glob(args.file_pattern)
+                if not filepaths:
+                    print(f"Error: No files found matching pattern '{args.file_pattern}'")
+                    sys.exit(1)
+            
+            print(f"Reading {len(filepaths)} sudoku puzzle files...")
+            puzzles = parser.parse_multiple_files(filepaths)
+            
+            if not puzzles:
+                print("Error: No valid puzzles found in the specified files")
+                sys.exit(1)
+            
+            print(f"Successfully parsed {len(puzzles)} puzzles")
+            
+        elif args.mixed:
             # Generate mixed puzzles
             puzzles = []
             sizes = [4, 6, 9]
@@ -355,20 +414,25 @@ Examples:
                 puzzles,
                 args.per_page,
                 formatting_options=formatting_options,
-                filename=args.output
+                filename=args.output,
+                from_files=reading_from_files
             )
         else:
             print("\nGenerating HTML...")
             html_content = printer.generate_html_document(
                 puzzles, 
                 args.per_page, 
-                formatting_options=formatting_options
+                formatting_options=formatting_options,
+                from_files=reading_from_files
             )
             printer.save_to_file(html_content, args.output)
-        print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
+        if reading_from_files:
+            print(f"\nSuccess! Parsed {len(puzzles)} puzzles from files.")
+        else:
+            print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
         print(f"Output saved to: {args.output}")
         print(f"Puzzles per page: {args.per_page}")
-        if args.seed is not None:
+        if not reading_from_files and args.seed is not None:
             print(f"Random seed used: {args.seed}")
         if not args.no_solutions:
             print("Solutions included on separate page")

@@ -58,7 +58,7 @@ class SudokuGenerator:
             for col in range(self.size):
                 if grid[row][col] == 0:
                     numbers = list(range(1, self.size + 1))
-                    random.shuffle(numbers)
+                    # Don't shuffle for solving - use deterministic order
                     
                     for num in numbers:
                         if self.is_valid(grid, row, col, num):
