@@ -80,7 +80,7 @@ Examples:
     
     parser.add_argument(
         "--difficulty", 
-        choices=["easy", "normal", "hard"], 
+        choices=["very_easy", "easy", "normal", "hard", "very_hard"], 
         default="normal",
         help="Puzzle difficulty level. Default: normal"
     )
