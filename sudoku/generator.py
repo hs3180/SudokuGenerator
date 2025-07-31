@@ -75,11 +75,16 @@ class SudokuGenerator:
     def generate_complete_grid(self) -> List[List[int]]:
         """Generate a complete valid sudoku grid."""
         grid = [[0 for _ in range(self.size)] for _ in range(self.size)]
-        # 只对4x4和9x9预填对角box，6x6直接回溯生成
-        if self.size in (4, 9):
+        
+        # 对于4x4数独，直接使用回溯算法生成，不预填充
+        # 对于6x6数独，直接使用回溯算法生成
+        # 对于9x9数独，预填充对角box然后回溯
+        if self.size == 9:
             for i in range(0, self.size, max(self.box_height, self.box_width)):
                 self.fill_box(grid, i, i)
-        self.solve(grid)
+        
+        if not self.solve(grid):
+            raise RuntimeError("Failed to generate a complete valid sudoku grid")
         return grid
     
     def fill_box(self, grid: List[List[int]], row: int, col: int):
@@ -132,10 +137,18 @@ class SudokuGenerator:
                 backup = puzzle[row][col]
                 puzzle[row][col] = 0
                 
-                # Check if puzzle still has unique solution (if required)
-                if not self.require_unique_solution or self.count_solutions(puzzle, 2) == 1:
-                    removed += 1
+                # Create a copy to test if the puzzle is still solvable
+                test_puzzle = deepcopy(puzzle)
+                
+                # First check if the puzzle is solvable
+                if self.solve(test_puzzle):
+                    # Then check if it has unique solution (if required)
+                    if not self.require_unique_solution or self.count_solutions(puzzle, 2) == 1:
+                        removed += 1
+                    else:
+                        puzzle[row][col] = backup
                 else:
+                    # If not solvable, restore the number
                     puzzle[row][col] = backup
             
             attempts += 1

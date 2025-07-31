@@ -2,6 +2,13 @@
 
 一个用于生成和打印数独谜题的Python项目。
 
+## 特性
+
+- ✅ **保证可解性**: 所有生成的数独谜题都经过验证，确保有唯一解
+- 🎯 **多种尺寸**: 支持4x4、6x6、9x9数独
+- 📊 **难度分级**: 提供easy、normal、hard三种难度
+- 🧪 **全面测试**: 包含完整的单元测试，确保生成质量
+
 ## 目录结构
 
 ```
@@ -34,6 +41,17 @@ python cli.py --size 9 --difficulty normal --count 4 --per-page 2
 
 - 核心逻辑位于`sudoku/`包中，便于维护和复用。
 - 单元测试位于`tests/`目录。
+- 所有生成的数独都经过可解性验证，确保质量。
+
+### 运行测试
+
+```bash
+# 运行所有测试
+python -m pytest tests/ -v
+
+# 运行特定测试
+python -m pytest tests/test_generator.py::TestSudokuGenerator::test_puzzle_solvability -v
+```
 
 ## 依赖
 

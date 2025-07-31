@@ -47,5 +47,43 @@ class TestSudokuGenerator(unittest.TestCase):
             col_vals = [puzzle[row][col] for row in range(6) if puzzle[row][col] != 0]
             self.assertEqual(len(col_vals), len(set(col_vals)), f"Col {col} has duplicates: {col_vals}")
 
+    def test_puzzle_solvability(self):
+        """Test that generated puzzles are solvable."""
+        for size in [4, 6, 9]:
+            gen = SudokuGenerator(size)
+            for difficulty in ['easy', 'normal', 'hard']:
+                # 添加重试机制，因为生成可能偶尔失败
+                max_attempts = 5
+                for attempt in range(max_attempts):
+                    try:
+                        puzzle, solution = gen.generate_puzzle(difficulty)
+                        break
+                    except RuntimeError as e:
+                        if attempt == max_attempts - 1:
+                            self.fail(f"Failed to generate puzzle after {max_attempts} attempts for size {size}, difficulty {difficulty}: {e}")
+                        continue
+                
+                # 验证谜题有解
+                test_puzzle = [row[:] for row in puzzle]  # 深拷贝
+                self.assertTrue(gen.solve(test_puzzle), 
+                               f"Puzzle for size {size}, difficulty {difficulty} is not solvable")
+                
+                # 验证解是正确的
+                for row in range(size):
+                    for col in range(size):
+                        if puzzle[row][col] != 0:
+                            self.assertEqual(test_puzzle[row][col], puzzle[row][col],
+                                           f"Solution doesn't preserve given numbers at ({row}, {col})")
+
+    def test_unique_solution(self):
+        """Test that puzzles have unique solutions when required."""
+        gen = SudokuGenerator(9)
+        gen.require_unique_solution = True
+        
+        puzzle, solution = gen.generate_puzzle('normal')
+        solution_count = gen.count_solutions(puzzle, 3)
+        self.assertEqual(solution_count, 1, 
+                        f"Puzzle should have exactly 1 solution, but found {solution_count}")
+
 if __name__ == '__main__':
     unittest.main() 
