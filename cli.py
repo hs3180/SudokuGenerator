@@ -12,7 +12,6 @@ import random
 import glob
 from typing import List, Tuple, Optional
 from sudoku.generator import SudokuGenerator
-from sudoku.printer import SudokuPrinter
 from sudoku.parser import SudokuParser
 
 def generate_multiple_puzzles(size: int, difficulty: str, count: int, seed: Optional[int] = None, 
@@ -286,6 +285,12 @@ Examples:
         help="Output as PDF instead of HTML (or use .pdf extension in --output)"
     )
     
+    parser.add_argument(
+        "--console",
+        action="store_true",
+        help="Output to console instead of file (no PDF/HTML generation)"
+    )
+    
     args = parser.parse_args()
     
     # Validation
@@ -384,67 +389,95 @@ Examples:
                 args.max_attempts_multiplier
             )
         
-        # Generate output with custom formatting
-        printer = SudokuPrinter()
-        formatting_options = {
-            'cell_size': args.cell_size,
-            'font_size': args.font_size,
-            'solution_cell_size': args.solution_cell_size,
-            'solution_font_size': args.solution_font_size,
-            'border_width': args.border_width,
-            'cell_border_width': args.cell_border_width,
-            'thick_border_width': args.thick_border_width,
-            'grid_color': args.grid_color,
-            'cell_border_color': args.cell_border_color,
-            'text_color': args.text_color,
-            'background_color': args.background_color,
-            'page_margin': args.page_margin,
-            'puzzle_margin': args.puzzle_margin,
-            'title_font_size': args.title_font_size,
-            'solution_title_font_size': args.solution_title_font_size,
-            'show_puzzle_info': args.print_info
-        }
-        # 默认输出PDF：只要--output未指定或为.pdf结尾，或未指定--pdf参数时，默认输出PDF
-        output_is_pdf = True if (not args.output or args.output.lower().endswith('.pdf')) else False
-        if args.pdf:
-            output_is_pdf = True
-        if output_is_pdf:
-            print("\nGenerating PDF...")
-            printer.generate_pdf_document(
-                puzzles,
-                args.per_page,
-                formatting_options=formatting_options,
-                filename=args.output,
-                from_files=reading_from_files
-            )
+        # Handle output
+        if args.console:
+            # Console output - no file generation
+            print("\n生成的数独谜题:")
+            for i, (puzzle, solution, difficulty, size) in enumerate(puzzles, 1):
+                print(f"\n谜题 {i} ({size}×{size} {difficulty}):")
+                print("谜题:")
+                for row in puzzle:
+                    print(' '.join(str(cell) if cell != 0 else '.' for cell in row))
+                if not args.no_solutions:
+                    print("解答:")
+                    for row in solution:
+                        print(' '.join(str(cell) for cell in row))
+                print()
+            
+            if reading_from_files:
+                print(f"成功解析了 {len(puzzles)} 个谜题")
+            else:
+                print(f"成功生成了 {len(puzzles)} 个谜题")
         else:
-            print("\nGenerating HTML...")
-            html_content = printer.generate_html_document(
-                puzzles, 
-                args.per_page, 
-                formatting_options=formatting_options,
-                from_files=reading_from_files
-            )
-            printer.save_to_file(html_content, args.output)
-        if reading_from_files:
-            print(f"\nSuccess! Parsed {len(puzzles)} puzzles from files.")
-        else:
-            print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
-        print(f"Output saved to: {args.output}")
-        print(f"Puzzles per page: {args.per_page}")
-        if not reading_from_files and args.seed is not None:
-            print(f"Random seed used: {args.seed}")
-        if not args.no_solutions:
-            print("Solutions included on separate page")
-        if output_is_pdf:
-            print("\nTo print:")
-            print(f"1. Open {args.output} in your PDF viewer")
-            print("2. Use the print function to print the puzzles")
-        else:
-            print("\nTo print:")
-            print(f"1. Open {args.output} in your web browser")
-            print("2. Use Ctrl+P (or Cmd+P on Mac) to print")
-            print("3. Make sure to enable 'Background graphics' in print settings")
+            # File output - import printer only when needed
+            try:
+                from sudoku.printer import SudokuPrinter
+                printer = SudokuPrinter()
+                formatting_options = {
+                    'cell_size': args.cell_size,
+                    'font_size': args.font_size,
+                    'solution_cell_size': args.solution_cell_size,
+                    'solution_font_size': args.solution_font_size,
+                    'border_width': args.border_width,
+                    'cell_border_width': args.cell_border_width,
+                    'thick_border_width': args.thick_border_width,
+                    'grid_color': args.grid_color,
+                    'cell_border_color': args.cell_border_color,
+                    'text_color': args.text_color,
+                    'background_color': args.background_color,
+                    'page_margin': args.page_margin,
+                    'puzzle_margin': args.puzzle_margin,
+                    'title_font_size': args.title_font_size,
+                    'solution_title_font_size': args.solution_title_font_size,
+                    'show_puzzle_info': args.print_info
+                }
+                # 默认输出PDF：只要--output未指定或为.pdf结尾，或未指定--pdf参数时，默认输出PDF
+                output_is_pdf = True if (not args.output or args.output.lower().endswith('.pdf')) else False
+                if args.pdf:
+                    output_is_pdf = True
+                if output_is_pdf:
+                    print("\nGenerating PDF...")
+                    printer.generate_pdf_document(
+                        puzzles,
+                        args.per_page,
+                        formatting_options=formatting_options,
+                        filename=args.output,
+                        from_files=reading_from_files
+                    )
+                else:
+                    print("\nGenerating HTML...")
+                    html_content = printer.generate_html_document(
+                        puzzles, 
+                        args.per_page, 
+                        formatting_options=formatting_options,
+                        from_files=reading_from_files
+                    )
+                    printer.save_to_file(html_content, args.output)
+                
+                if reading_from_files:
+                    print(f"\nSuccess! Parsed {len(puzzles)} puzzles from files.")
+                else:
+                    print(f"\nSuccess! Generated {len(puzzles)} puzzles.")
+                print(f"Output saved to: {args.output}")
+                print(f"Puzzles per page: {args.per_page}")
+                if not reading_from_files and args.seed is not None:
+                    print(f"Random seed used: {args.seed}")
+                if not args.no_solutions:
+                    print("Solutions included on separate page")
+                if output_is_pdf:
+                    print("\nTo print:")
+                    print(f"1. Open {args.output} in your PDF viewer")
+                    print("2. Use the print function to print the puzzles")
+                else:
+                    print("\nTo print:")
+                    print(f"1. Open {args.output} in your web browser")
+                    print("2. Use Ctrl+P (or Cmd+P on Mac) to print")
+                    print("3. Make sure to enable 'Background graphics' in print settings")
+            except ImportError as e:
+                print(f"Error: {e}")
+                print("Please install required dependencies for file output:")
+                print("pip install fpdf")
+                sys.exit(1)
         
     except KeyboardInterrupt:
         print("\nGeneration cancelled by user.")
