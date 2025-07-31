@@ -51,7 +51,7 @@ class TestSudokuGenerator(unittest.TestCase):
         """Test that generated puzzles are solvable."""
         for size in [4, 6, 9]:
             gen = SudokuGenerator(size)
-            for difficulty in ['easy', 'normal', 'hard']:
+            for difficulty in ['very_easy', 'easy', 'normal', 'hard', 'very_hard']:
                 # 添加重试机制，因为生成可能偶尔失败
                 max_attempts = 5
                 for attempt in range(max_attempts):
@@ -84,6 +84,64 @@ class TestSudokuGenerator(unittest.TestCase):
         solution_count = gen.count_solutions(puzzle, 3)
         self.assertEqual(solution_count, 1, 
                         f"Puzzle should have exactly 1 solution, but found {solution_count}")
+
+    def test_difficulty_levels(self):
+        """Test that different difficulty levels create appropriate puzzle densities."""
+        gen = SudokuGenerator(9)
+        
+        difficulties = ['very_easy', 'easy', 'normal', 'hard', 'very_hard']
+        stats = {}
+        
+        for difficulty in difficulties:
+            puzzle, solution = gen.generate_puzzle(difficulty)
+            stats[difficulty] = gen.get_puzzle_statistics(puzzle)
+        
+        # 验证难度递增时，填充率递减
+        fill_percentages = [stats[d]['fill_percentage'] for d in difficulties]
+        for i in range(1, len(fill_percentages)):
+            self.assertGreater(fill_percentages[i-1], fill_percentages[i], 
+                              f"Fill percentage should decrease with difficulty: {fill_percentages}")
+
+    def test_improved_removal_algorithm(self):
+        """Test the improved number removal algorithm."""
+        gen = SudokuGenerator(9)
+        solution = gen.generate_complete_grid()
+        
+        # 测试改进的挖空算法
+        puzzle = gen.remove_numbers_improved(solution, 'normal')
+        
+        # 验证挖空后的谜题仍然有唯一解
+        solution_count = gen.count_solutions(puzzle, 3)
+        self.assertEqual(solution_count, 1, 
+                        f"Puzzle should have exactly 1 solution after improved removal, but found {solution_count}")
+        
+        # 验证挖空比例符合预期
+        stats = gen.get_puzzle_statistics(puzzle)
+        expected_empty_percentage = gen.difficulty_settings[9]['normal'] * 100
+        actual_empty_percentage = stats['empty_percentage']
+        
+        # 允许一定的误差范围（±5%）
+        self.assertAlmostEqual(actual_empty_percentage, expected_empty_percentage, delta=5.0,
+                              msg=f"Empty percentage {actual_empty_percentage}% should be close to expected {expected_empty_percentage}%")
+
+    def test_puzzle_statistics(self):
+        """Test the puzzle statistics functionality."""
+        gen = SudokuGenerator(9)
+        puzzle, solution = gen.generate_puzzle('easy')
+        
+        stats = gen.get_puzzle_statistics(puzzle)
+        
+        # 验证统计信息的完整性
+        required_keys = ['size', 'filled_cells', 'empty_cells', 'fill_percentage', 'empty_percentage']
+        for key in required_keys:
+            self.assertIn(key, stats, f"Statistics should contain key: {key}")
+        
+        # 验证数值的合理性
+        self.assertEqual(stats['size'], 9)
+        self.assertGreater(stats['filled_cells'], 0)
+        self.assertGreater(stats['empty_cells'], 0)
+        self.assertEqual(stats['filled_cells'] + stats['empty_cells'], 81)
+        self.assertAlmostEqual(stats['fill_percentage'] + stats['empty_percentage'], 100.0, places=1)
 
 if __name__ == '__main__':
     unittest.main() 
