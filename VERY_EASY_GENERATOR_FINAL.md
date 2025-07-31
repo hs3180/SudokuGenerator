@@ -14,13 +14,41 @@
 
 | 文件名 | 类型 | 说明 |
 |--------|------|------|
+| `generate_very_easy.sh` | **Shell脚本** | **主要脚本，支持命令行参数** |
 | `quick_very_easy_text.py` | 文本版本 | 生成纯文本文件 |
 | `quick_very_easy_html.py` | HTML版本 | 生成HTML文件，可转换为PDF |
-| `generate_very_easy_pdf.py` | 完整版本 | 功能最全，支持多种参数 |
 
 ## 🚀 快速开始
 
-### 1. 文本版本 (推荐新手)
+### 1. Shell脚本 (推荐)
+
+```bash
+# 使用默认设置 (生成HTML文件)
+./generate_very_easy.sh
+
+# 生成文本文件
+./generate_very_easy.sh -f text
+
+# 生成更多谜题
+./generate_very_easy.sh -c 3 -f html
+
+# 指定输出文件名
+./generate_very_easy.sh -o my_puzzles -f html
+
+# 使用不同的随机种子
+./generate_very_easy.sh -s 123 -f text
+```
+
+**特点**:
+- 🎯 支持命令行参数
+- 🎨 彩色输出
+- 📝 详细的进度显示
+- 🔧 参数验证
+- 📊 统计信息
+
+### 2. Python脚本版本
+
+#### 文本版本 (推荐新手)
 
 ```bash
 python3 quick_very_easy_text.py
@@ -31,7 +59,7 @@ python3 quick_very_easy_text.py
 - 包含谜题和解答
 - 适合在任何环境下使用
 
-### 2. HTML版本 (推荐)
+#### HTML版本
 
 ```bash
 python3 quick_very_easy_html.py
@@ -47,22 +75,6 @@ python3 quick_very_easy_html.py
 2. 按 `Ctrl+P` (或 `Cmd+P`)
 3. 选择"保存为PDF"
 4. 点击保存
-
-### 3. 完整版本 (高级用户)
-
-```bash
-# 基本用法
-python3 generate_very_easy_pdf.py --count 2 --per-page 1
-
-# 生成更多谜题
-python3 generate_very_easy_pdf.py --count 3 --per-page 2
-
-# 不包含解答
-python3 generate_very_easy_pdf.py --count 2 --per-page 1 --no-solutions
-
-# 指定输出文件名
-python3 generate_very_easy_pdf.py --count 2 --per-page 1 --output my_puzzles.pdf
-```
 
 ## 📊 难度说明
 
@@ -112,16 +124,16 @@ SOLUTION:
 
 ## 🔧 参数说明
 
-### `generate_very_easy_pdf.py` 参数
+### `generate_very_easy.sh` 参数
 
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `--count` | int | 2 | 每种尺寸生成的谜题数量 |
-| `--per-page` | int | 1 | 每页谜题数量 (1-4) |
-| `--output` | str | very_easy_sudoku.pdf | 输出文件名 |
-| `--no-solutions` | flag | False | 不包含解答 |
-| `--seed` | int | None | 随机种子 |
-| `--verbose` | flag | False | 显示详细输出 |
+| `-c, --count` | int | 2 | 每种尺寸生成的谜题数量 |
+| `-f, --format` | string | html | 输出格式: text, html |
+| `-o, --output` | string | very_easy_sudoku | 输出文件名 |
+| `-s, --seed` | int | 42 | 随机种子 |
+| `-v, --verbose` | flag | false | 显示详细输出 |
+| `-h, --help` | flag | - | 显示帮助信息 |
 
 ## 📈 性能统计
 
@@ -175,17 +187,17 @@ SOLUTION:
 ## 🎯 使用建议
 
 ### 新手用户
-1. 使用 `quick_very_easy_text.py`
+1. 使用 `./generate_very_easy.sh -f text`
 2. 生成文本文件
 3. 打印或保存文本文件
 
 ### 普通用户
-1. 使用 `quick_very_easy_html.py`
+1. 使用 `./generate_very_easy.sh -f html`
 2. 在浏览器中打开HTML文件
 3. 打印为PDF或直接打印
 
 ### 高级用户
-1. 使用 `generate_very_easy_pdf.py`
+1. 使用 `./generate_very_easy.sh` 配合各种参数
 2. 自定义参数
 3. 批量生成
 
