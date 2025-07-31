@@ -7,14 +7,14 @@ echo "生成Very Easy数独..."
 
 # 生成4x4 Very Easy数独
 echo "生成4x4 Very Easy数独..."
-python3 simple_cli.py --size 4 --difficulty very_easy --count 2 --seed 42
+python3 simple_cli.py --size 4 --difficulty very_easy --count 2
 
 # 生成6x6 Very Easy数独
 echo "生成6x6 Very Easy数独..."
-python3 simple_cli.py --size 6 --difficulty very_easy --count 2 --seed 42
+python3 simple_cli.py --size 6 --difficulty very_easy --count 2
 
 # 生成9x9 Very Easy数独
 echo "生成9x9 Very Easy数独..."
-python3 simple_cli.py --size 9 --difficulty very_easy --count 2 --seed 42
+python3 simple_cli.py --size 9 --difficulty very_easy --count 2
 
 echo "完成！生成了三种尺寸的Very Easy数独"
