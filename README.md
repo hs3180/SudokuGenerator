@@ -21,7 +21,15 @@ pip install -e .
 ```
 安装为命令行工具后，可直接使用 `sudoku-generator` 命令。
 
-### 快速开始
+### Web 版快速开始
+```bash
+# 启动开发服务器（默认 http://127.0.0.1:5000 ）
+python web/app.py
+```
+- 移动端自适应：使用 Bootstrap 5 响应式布局，表单在手机端单列展示，按钮大尺寸便于触控。
+- 输出格式：选择 HTML 可直接在浏览器预览/打印；选择 PDF 会触发下载，适合保存/分享。
+
+### CLI 快速开始
 - 生成 4 个 9×9 正常难度的数独，按每页 2 个排版（默认输出 PDF）
 ```bash
 python cli.py --size 9 --difficulty normal --count 4 --per-page 2
@@ -116,6 +124,12 @@ SudokuGenerator/
   │   └── printer.py         # 输出 HTML/PDF
   ├── cli.py                 # 命令行入口
   ├── generate_very_easy.sh  # Very Easy 快速生成脚本
+  ├── web/                   # Web 应用（Flask + Bootstrap）
+  │   ├── app.py
+  │   ├── templates/
+  │   │   └── index.html
+  │   └── static/
+  │       └── styles.css
   ├── README.md
   ├── requirements.txt       # 依赖
   ├── setup.py               # 可选，安装与发布
@@ -135,6 +149,7 @@ python -m pytest tests/ -v
 ### 依赖
 - Python 3.7+
 - `fpdf`（PDF 输出所需）
+- `flask`（Web 版所需）
 ```bash
 pip install -r requirements.txt
 ```
