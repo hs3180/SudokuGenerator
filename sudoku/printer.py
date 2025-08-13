@@ -1,6 +1,11 @@
 from typing import List, Tuple, Dict, Optional
 from sudoku.generator import SudokuGenerator
-from fpdf import FPDF
+try:
+    from fpdf import FPDF  # type: ignore
+    _FPDF_AVAILABLE = True
+except Exception:
+    FPDF = None  # type: ignore
+    _FPDF_AVAILABLE = False
 
 class SudokuPrinter:
     def __init__(self):
@@ -332,7 +337,8 @@ class SudokuPrinter:
     def generate_pdf_document(self, all_puzzles: List[Tuple[List[List[int]], List[List[int]], str, int]],
                              puzzles_per_page: int, include_solutions: bool = True,
                              formatting_options: Optional[Dict] = None, filename: str = "sudoku_puzzles.pdf", from_files: bool = False):
-        """Generate a PDF document with puzzles only (no solutions), auto-fit puzzles per page."""
+        if not _FPDF_AVAILABLE:
+            raise ImportError("fpdf is required for PDF output. Install with 'pip install fpdf'.")
         options = formatting_options or {}
         pdf = FPDF(orientation="P", unit="mm", format="A4")
         pdf.set_auto_page_break(auto=False, margin=0)

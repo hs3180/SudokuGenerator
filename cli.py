@@ -291,6 +291,12 @@ Examples:
         help="Output to console instead of file (no PDF/HTML generation)"
     )
     
+    parser.add_argument(
+        "--backtest",
+        action="store_true",
+        help="Run backtest to evaluate generation performance"
+    )
+    
     args = parser.parse_args()
     
     # Validation
@@ -328,6 +334,13 @@ Examples:
         sys.exit(1)
 
     try:
+        if args.backtest:
+            from backtest.run import run_backtest, format_results_table
+            print("Running backtest...\n")
+            results = run_backtest(runs_per_setting=2)
+            print(format_results_table(results))
+            sys.exit(0)
+
         if reading_from_files:
             # Read puzzles from files
             parser = SudokuParser()
